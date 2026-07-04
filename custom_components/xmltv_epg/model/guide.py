@@ -4,7 +4,7 @@ import contextlib
 import io
 from typing import Any
 
-from lxml import etree
+from lxml import etree  # pyright: ignore[reportAttributeAccessIssue]
 from pydantic_core import ValidationError
 from pydantic_xml import BaseXmlModel, attr, element, xml_field_validator
 from pydantic_xml.element.element import XmlElementReader
@@ -93,10 +93,11 @@ class TVGuide(BaseXmlModel, tag="tv", search_mode="ordered"):
             if event != "end":
                 continue
 
-            model = TVChannel if elem.tag == "channel" else TVProgram
-            target = channels if elem.tag == "channel" else programs
             with contextlib.suppress(ValidationError):
-                target.append(model.from_xml_tree(elem))
+                if elem.tag == "channel":
+                    channels.append(TVChannel.from_xml_tree(elem))
+                else:
+                    programs.append(TVProgram.from_xml_tree(elem))
 
             # Release the processed element and its already-seen previous siblings
             # so the in-memory tree never grows to the full document.

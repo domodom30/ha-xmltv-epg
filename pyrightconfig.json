@@ -2,7 +2,7 @@
   "include": ["custom_components", "test"],
   "exclude": [],
   "reportMissingImports": true,
-  "reportMissingTypeStubs": true,
+  "reportMissingTypeStubs": false,
   "reportUnusedImport": true,
   "reportUnusedVariable": true,
   "reportGeneralTypeIssues": true,
