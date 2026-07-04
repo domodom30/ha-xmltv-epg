@@ -1,35 +1,78 @@
 name: "Release"
 
 on:
-  release:
-    types:
-      - "published"
-
-permissions: {}
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   release:
-    name: "Release"
-    runs-on: "ubuntu-latest"
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
     permissions:
       contents: write
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     steps:
-      - name: "Checkout the repository"
-        uses: "actions/checkout@v7.0.0"
-
-      - name: "Adjust version number"
-        shell: "bash"
-        run: |
-          yq -i -o json '.version="${{ github.event.release.tag_name }}"' \
-            "${{ github.workspace }}/custom_components/xmltv_epg/manifest.json"
-
-      - name: "ZIP the integration directory"
-        shell: "bash"
-        run: |
-          cd "${{ github.workspace }}/custom_components/xmltv_epg"
-          zip xmltv_epg.zip -r ./
-
-      - name: "Upload the ZIP file to the release"
-        uses: softprops/action-gh-release@718ea10b132b3b2eba29c1007bb80653f286566b # 3.0.1
+      - name: ⤵️ Check out code from GitHub
+        uses: actions/checkout@v4
         with:
-          files: ${{ github.workspace }}/custom_components/xmltv_epg/xmltv_epg.zip
+          fetch-depth: 0
+
+      - name: 📋 Read version from manifest.json
+        id: get_version
+        run: |
+          VERSION=$(jq -r '.version' custom_components/xmltv_epg/manifest.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "📦 Version: $VERSION"
+
+      - name: 🔍 Check if tag already exists
+        id: check_tag
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          if git ls-remote --tags origin "refs/tags/v${VERSION}" | grep -q "refs/tags/v${VERSION}"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "🏷️ Tag v${VERSION} already exists — skipping release"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "🆕 Tag v${VERSION} not found — creating release"
+          fi
+
+      - name: 📝 Extract changelog for version
+        id: changelog
+        if: steps.check_tag.outputs.exists == 'false'
+        run: |
+          VERSION="${{ steps.get_version.outputs.version }}"
+          if [ -f CHANGELOG.md ]; then
+            awk -v ver="$VERSION" '
+              index($0, "## [" ver "]") == 1 { inrange=1; print; next }
+              inrange && /^## \[/ { exit }
+              inrange { print }
+            ' CHANGELOG.md > release_notes.md
+            # retirer les lignes vides de fin puis un éventuel séparateur "---" final
+            sed -i -e :a -e '/^[[:space:]]*$/{$d;N;ba}' release_notes.md
+            sed -i -e '$ { /^---$/d }' release_notes.md
+            sed -i -e :a -e '/^[[:space:]]*$/{$d;N;ba}' release_notes.md
+            if [ -s release_notes.md ]; then
+              echo "notes<<EOF" >> $GITHUB_OUTPUT
+              cat release_notes.md >> $GITHUB_OUTPUT
+              echo "EOF" >> $GITHUB_OUTPUT
+              echo "📝 Changelog extrait pour v$VERSION"
+            else
+              echo "notes=" >> $GITHUB_OUTPUT
+              echo "⚠️ Aucune entrée trouvée dans CHANGELOG.md pour v$VERSION"
+            fi
+          else
+            echo "notes=" >> $GITHUB_OUTPUT
+            echo "⚠️ CHANGELOG.md introuvable"
+          fi
+
+      - name: 🚀 Create GitHub Release
+        if: steps.check_tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.get_version.outputs.version }}
+          name: Release v${{ steps.get_version.outputs.version }}
+          body: ${{ steps.changelog.outputs.notes }}
+          draft: false
+          prerelease: false

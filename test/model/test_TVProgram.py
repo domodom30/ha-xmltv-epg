@@ -38,11 +38,7 @@ def test_from_xml():
 
 
 def test_episode_num_system_season_episode():
-    """
-    Test TVProgram.from_xml parses episode_num in SxxExx format.
-
-    as seen in https://github.com/shadow578/homeassistant_xmltv-epg/issues/32
-    """
+    """Test TVProgram.from_xml parses episode_num in SxxExx format."""
     xml = """
     <programme start="20200101010000 +0000" stop="20200101020000 +0000" channel="CH1">
         <title>Program 1</title>

@@ -1,9 +1,4 @@
-"""
-Custom integration to integrate XMLTV EPG data with Home Assistant.
-
-For more details about this integration, please refer to
-https://github.com/shadow578/homeassistant_xmltv-epg
-"""
+"""Custom integration to integrate XMLTV EPG data with Home Assistant."""
 
 from __future__ import annotations
 

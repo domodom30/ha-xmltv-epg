@@ -120,7 +120,6 @@ class TVGuide(BaseXmlModel, tag="tv", search_mode="ordered"):
 
         :return: generator_name, source_name, or None, depending on availability
 
-        :note fallback required, as seen in https://github.com/shadow578/homeassistant_xmltv-epg/issues/32
         """
         return self.generator_name or self.source_name
 
@@ -131,7 +130,6 @@ class TVGuide(BaseXmlModel, tag="tv", search_mode="ordered"):
 
         :return: generator_url, source_url, or None, depending on availability
 
-        :note fallback required, as seen in https://github.com/shadow578/homeassistant_xmltv-epg/issues/32
         """
         return self.generator_url or self.source_url
 
