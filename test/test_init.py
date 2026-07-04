@@ -25,11 +25,7 @@ async def test_setup_unload_and_reload_entry(hass, mock_xmltv_client_get_data):
 
     # helper to assert entry
     def assert_entry():
-        assert DOMAIN in hass.data
-        assert config_entry.entry_id in hass.data[DOMAIN]
-        assert isinstance(
-            hass.data[DOMAIN][config_entry.entry_id], XMLTVDataUpdateCoordinator
-        )
+        assert isinstance(config_entry.runtime_data, XMLTVDataUpdateCoordinator)
 
     # setup the entry
     await hass.config_entries.async_setup(config_entry.entry_id)
@@ -47,9 +43,8 @@ async def test_setup_unload_and_reload_entry(hass, mock_xmltv_client_get_data):
     # since the coordinator is re-created on reload, the data will be re-fetched too
     assert mock_xmltv_client_get_data.call_count == 2
 
-    # unload the entry and check the data is gone
+    # unload the entry; it should succeed
     assert await async_unload_entry(hass, config_entry)
-    assert config_entry.entry_id not in hass.data[DOMAIN]
 
     # coordinator was NOT updated again, re-fetch count did not change
     assert mock_xmltv_client_get_data.call_count == 2

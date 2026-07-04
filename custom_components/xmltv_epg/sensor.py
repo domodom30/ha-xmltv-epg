@@ -11,23 +11,25 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import EntityCategory
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN, LOGGER, ChannelSensorMode
-from .coordinator import XMLTVDataUpdateCoordinator
+from .const import LOGGER, ChannelSensorMode
+from .coordinator import XMLTVConfigEntry, XMLTVDataUpdateCoordinator
 from .entity import XMLTVEntity, XMLTVProgramEntity
 from .helper import normalize_for_entity_id, program_get_normalized_identification
 from .model import TVChannel, TVGuide
 
+# Entities only read from the coordinator's cached data; no outbound requests.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: XMLTVConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):
     """Set up the sensor platform."""
-    coordinator: XMLTVDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator = config_entry.runtime_data
     guide: TVGuide = coordinator.data
 
     LOGGER.debug(
@@ -37,7 +39,7 @@ async def async_setup_entry(
     # sensor for coordinator status
     sensors: list[SensorEntity] = [XMLTVStatusSensor(coordinator, guide)]
 
-    for channel in guide.channels:
+    for channel in coordinator.enabled_channels:
         # current
         if coordinator.enable_current_sensor:
             sensors.append(
@@ -76,13 +78,17 @@ class XMLTVChannelSensor(XMLTVProgramEntity, SensorEntity):
         )
 
         self.entity_id = entity_id
-        self._attr_unique_id = str(uuid.uuid5(uuid.NAMESPACE_X500, self.entity_id))
+        # unique_id is derived from the raw channel id (globally unique in XMLTV),
+        # not from the normalized entity_id which can collide across channels.
+        self._attr_unique_id = str(
+            uuid.uuid5(uuid.NAMESPACE_X500, f"{channel.id}_program_sensor_{mode}")
+        )
 
         self._attr_has_entity_name = True
         self.entity_description = SensorEntityDescription(
             key=translation_key,
             translation_key=translation_key,
-            icon="mdi:format-quote-close",
+            icon="mdi:television-classic",
         )
 
         LOGGER.debug(f"Setup sensor '{self.entity_id}' for channel '{channel.id}'.")
@@ -182,7 +188,9 @@ class XMLTVStatusSensor(XMLTVEntity, SensorEntity):
 
         translation_key, entity_id = self.get_normalized_identification(guide)
         self.entity_id = entity_id
-        self._attr_unique_id = str(uuid.uuid5(uuid.NAMESPACE_X500, self.entity_id))
+        self._attr_unique_id = str(
+            uuid.uuid5(uuid.NAMESPACE_X500, f"{guide.name}_last_update")
+        )
 
         self._attr_has_entity_name = True
         self.entity_description = SensorEntityDescription(

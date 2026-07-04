@@ -22,7 +22,7 @@ class TVChannel(BaseXmlModel, tag="channel", search_mode="ordered"):
     """Icon associated with this channel, if any.
     Generally, this will be a logo or similar image."""
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: Any) -> None:  # noqa: PYI063
         """Hooks post-initialization to initialize programs field."""
         self.__programs: list[TVProgram] = []
         return super().model_post_init(__context)
@@ -32,13 +32,20 @@ class TVChannel(BaseXmlModel, tag="channel", search_mode="ordered"):
         Link a program to this channel.
 
         This method is internal and should not be called under normal circumstances.
-        Cross-linking is handled by TVGuide.
+        Cross-linking is handled by TVGuide, which calls _sort_programs once all
+        programs have been linked.
 
         :param program: Program to link to this channel.
         """
         self.__programs.append(program)
 
-        # ensure programs remain sorted by start time
+    def _sort_programs(self) -> None:
+        """
+        Sort the linked programs by start time.
+
+        This method is internal and should not be called under normal circumstances.
+        Cross-linking is handled by TVGuide.
+        """
         self.__programs.sort(key=lambda p: p.start)
 
     def get_current_program(self, time: datetime) -> TVProgram | None:

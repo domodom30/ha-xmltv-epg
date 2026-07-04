@@ -1,6 +1,6 @@
 """Constants for testing."""
 
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 from custom_components.xmltv_epg.model import (
     TVChannel,
@@ -11,7 +11,8 @@ from custom_components.xmltv_epg.model import (
     TVProgramEpisodeNumber,
 )
 
-MOCK_NOW = datetime(2024, 5, 17, 12, 45, 0)
+# Timezone-aware, mirroring real XMLTV data (start/stop always carry an offset).
+MOCK_NOW = datetime(2024, 5, 17, 12, 45, 0, tzinfo=UTC)
 MOCK_PRIMETIME = MOCK_NOW.replace(hour=20, minute=15, second=0)
 
 

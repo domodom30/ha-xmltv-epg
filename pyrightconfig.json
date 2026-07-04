@@ -1,16 +1,13 @@
 {
-    "include": [
-        "custom_components",
-        "test"
-    ],
-    "exclude": [],
-    "reportMissingImports": true,
-    "reportMissingTypeStubs": true,
-    "reportUnusedImport": true,
-    "reportUnusedVariable": true,
-    "reportGeneralTypeIssues": true,
-    "reportUnusedClass": true,
-    "reportUnusedFunction": true,
-    "pythonVersion": "3.12",
-    "typeCheckingMode": "standard",
+  "include": ["custom_components", "test"],
+  "exclude": [],
+  "reportMissingImports": true,
+  "reportMissingTypeStubs": true,
+  "reportUnusedImport": true,
+  "reportUnusedVariable": true,
+  "reportGeneralTypeIssues": true,
+  "reportUnusedClass": true,
+  "reportUnusedFunction": true,
+  "pythonVersion": "3.14",
+  "typeCheckingMode": "standard"
 }

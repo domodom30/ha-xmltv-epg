@@ -1,170 +1,213 @@
 {
-    "config": {
-        "step": {
-            "user": {
-                "description": "Configure the data source for the XMLTV EPG integration.",
-                "data": {
-                    "host": "XMLTV Source URL"
-                }
-            }
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configure the data source for the XMLTV EPG integration.",
+        "data": {
+          "host": "XMLTV Source URL"
         },
-        "error": {
-            "connection": "Unable to fetch XMLTV data.",
-            "unknown": "Unknown error occurred."
+        "data_description": {
+          "host": "Direct link to the XMLTV guide file. Compressed files (.gz, .xz, .zip) are supported."
         }
+      }
     },
-    "options": {
-        "step": {
-            "init": {
-                "description": "Change runtime settings for the XMLTV EPG integration. Changes may require a reload of the integration.",
-                "data": {
-                    "update_interval_hours": "Update Interval (hours)",
-                    "program_lookahead_minutes": "Current Program Lookahead (minutes)",
-                    "enable_current_sensor": "Enable Current Program Sensor",
-                    "enable_upcoming_sensor": "Enable Upcoming Program Sensor",
-                    "enable_primetime_sensor": "Enable Prime-Time Program Sensor",
-                    "enable_channel_icons": "Enable Image Entities for Channel Icons",
-                    "enable_program_images": "Enable Image Entities for Current and Upcoming Program",
-                    "primetime_time": "Prime-Time Program Time"
-                }
-            }
-        }
+    "error": {
+      "connection": "Unable to fetch XMLTV data.",
+      "unknown": "Unknown error occurred."
     },
-    "entity": {
-        "sensor": {
-            "program_current": {
-                "name": "Current Program",
-                "state_attributes": {
-                    "start": {
-                        "name": "Starts at"
-                    },
-                    "end": {
-                        "name": "Ends at"
-                    },
-                    "duration": {
-                        "name": "Duration"
-                    },
-                    "title": {
-                        "name": "Title"
-                    },
-                    "description": {
-                        "name": "Description"
-                    },
-                    "release_date": {
-                        "name": "Release Date"
-                    },
-                    "language": {
-                        "name": "Language"
-                    },
-                    "episode": {
-                        "name": "Episode"
-                    },
-                    "category": {
-                        "name": "Category"
-                    },
-                    "subtitle": {
-                        "name": "Subtitle"
-                    },
-                    "channel_program_known_until": {
-                        "name": "EPG available until"
-                    }
-                }
-            },
-            "program_upcoming": {
-                "name": "Upcoming Program",
-                "state_attributes": {
-                    "start": {
-                        "name": "Starts at"
-                    },
-                    "end": {
-                        "name": "Ends at"
-                    },
-                    "duration": {
-                        "name": "Duration"
-                    },
-                    "title": {
-                        "name": "Title"
-                    },
-                    "description": {
-                        "name": "Description"
-                    },
-                    "release_date": {
-                        "name": "Release Date"
-                    },
-                    "language": {
-                        "name": "Language"
-                    },
-                    "episode": {
-                        "name": "Episode"
-                    },
-                    "category": {
-                        "name": "Category"
-                    },
-                    "subtitle": {
-                        "name": "Subtitle"
-                    }
-                }
-            },
-            "program_primetime": {
-                "name": "Prime-Time Program",
-                "state_attributes": {
-                    "start": {
-                        "name": "Starts at"
-                    },
-                    "end": {
-                        "name": "Ends at"
-                    },
-                    "duration": {
-                        "name": "Duration"
-                    },
-                    "title": {
-                        "name": "Title"
-                    },
-                    "description": {
-                        "name": "Description"
-                    },
-                    "release_date": {
-                        "name": "Release Date"
-                    },
-                    "language": {
-                        "name": "Language"
-                    },
-                    "episode": {
-                        "name": "Episode"
-                    },
-                    "category": {
-                        "name": "Category"
-                    },
-                    "subtitle": {
-                        "name": "Subtitle"
-                    },
-                    "channel_program_known_until": {
-                        "name": "EPG available until"
-                    }
-                }
-            },
-            "last_update": {
-                "name": "{generator_name} Last Update",
-                "state_attributes": {
-                    "generator_name": {
-                        "name": "Generator Name"
-                    },
-                    "generator_url": {
-                        "name": "Generator URL"
-                    }
-                }
-            }
-        },
-        "image": {
-            "program_image_current": {
-                "name": "Current Program Image"
-            },
-            "program_image_upcoming": {
-                "name": "Upcoming Program Image"
-            },
-            "channel_icon": {
-                "name": "Channel Icon"
-            }
-        }
+    "abort": {
+      "already_configured": "This XMLTV source is already configured."
+    },
+    "progress": {
+      "import_guide": "Downloading and parsing the XMLTV guide… This can take a while for large guides."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Change runtime settings for the XMLTV EPG integration. Changes may require a reload of the integration.",
+        "sections": {
+          "channels": {
+            "name": "Channels",
+            "data": {
+              "selected_channels": "Channels"
+            },
+            "data_description": {
+              "selected_channels": "Only the selected channels get sensor and image entities. Leave all selected to expose every channel."
+            }
+          },
+          "update": {
+            "name": "Update",
+            "data": {
+              "update_interval_hours": "Update Interval (hours)"
+            },
+            "data_description": {
+              "update_interval_hours": "How often the guide data is re-downloaded from the source."
+            }
+          },
+          "programs": {
+            "name": "Programs",
+            "data": {
+              "enable_current_sensor": "Enable Current Program Sensor",
+              "enable_upcoming_sensor": "Enable Upcoming Program Sensor",
+              "enable_primetime_sensor": "Enable Prime-Time Program Sensor",
+              "program_lookahead_minutes": "Current Program Lookahead (minutes)",
+              "primetime_time": "Prime-Time Program Time"
+            },
+            "data_description": {
+              "program_lookahead_minutes": "Treat a program as 'current' this many minutes before it actually starts.",
+              "primetime_time": "Time of day used for the prime-time program sensor."
+            }
+          },
+          "images": {
+            "name": "Images",
+            "data": {
+              "enable_channel_icons": "Enable Image Entities for Channel Icons",
+              "enable_program_images": "Enable Image Entities for Current Program"
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "program_current": {
+        "name": "Current Program",
+        "state_attributes": {
+          "start": {
+            "name": "Starts at"
+          },
+          "end": {
+            "name": "Ends at"
+          },
+          "duration": {
+            "name": "Duration"
+          },
+          "title": {
+            "name": "Title"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "release_date": {
+            "name": "Release Date"
+          },
+          "language": {
+            "name": "Language"
+          },
+          "episode": {
+            "name": "Episode"
+          },
+          "category": {
+            "name": "Category"
+          },
+          "subtitle": {
+            "name": "Subtitle"
+          },
+          "channel_program_known_until": {
+            "name": "EPG available until"
+          }
+        }
+      },
+      "program_upcoming": {
+        "name": "Upcoming Program",
+        "state_attributes": {
+          "start": {
+            "name": "Starts at"
+          },
+          "end": {
+            "name": "Ends at"
+          },
+          "duration": {
+            "name": "Duration"
+          },
+          "title": {
+            "name": "Title"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "release_date": {
+            "name": "Release Date"
+          },
+          "language": {
+            "name": "Language"
+          },
+          "episode": {
+            "name": "Episode"
+          },
+          "category": {
+            "name": "Category"
+          },
+          "subtitle": {
+            "name": "Subtitle"
+          }
+        }
+      },
+      "program_primetime": {
+        "name": "Prime-Time Program",
+        "state_attributes": {
+          "start": {
+            "name": "Starts at"
+          },
+          "end": {
+            "name": "Ends at"
+          },
+          "duration": {
+            "name": "Duration"
+          },
+          "title": {
+            "name": "Title"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "release_date": {
+            "name": "Release Date"
+          },
+          "language": {
+            "name": "Language"
+          },
+          "episode": {
+            "name": "Episode"
+          },
+          "category": {
+            "name": "Category"
+          },
+          "subtitle": {
+            "name": "Subtitle"
+          },
+          "channel_program_known_until": {
+            "name": "EPG available until"
+          }
+        }
+      },
+      "last_update": {
+        "name": "{generator_name} Last Update",
+        "state_attributes": {
+          "generator_name": {
+            "name": "Generator Name"
+          },
+          "generator_url": {
+            "name": "Generator URL"
+          }
+        }
+      }
+    },
+    "image": {
+      "program_image_current": {
+        "name": "Current Program Image"
+      },
+      "program_image_upcoming": {
+        "name": "Upcoming Program Image"
+      },
+      "program_image_primetime": {
+        "name": "Prime-Time Program Image"
+      },
+      "channel_icon": {
+        "name": "Channel Icon"
+      }
+    }
+  }
 }

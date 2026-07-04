@@ -1,31 +1,28 @@
-"""Sensor platform for XMLTV."""
-
-from __future__ import annotations
+"""Image platform for XMLTV."""
 
 import uuid
 
-from homeassistant.components.image import (
-    ImageEntity,
-    ImageEntityDescription,
-)
+from homeassistant.components.image import ImageEntity, ImageEntityDescription
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.config_entries import ConfigEntry
 
-from .const import DOMAIN, LOGGER, ChannelSensorMode
-from .coordinator import XMLTVDataUpdateCoordinator
+from .const import LOGGER, ChannelSensorMode
+from .coordinator import XMLTVConfigEntry, XMLTVDataUpdateCoordinator
 from .entity import XMLTVEntity, XMLTVProgramEntity
 from .helper import program_get_normalized_identification
 from .model import TVChannel, TVGuide
 
+# Entities only read from the coordinator's cached data; no outbound requests.
+PARALLEL_UPDATES = 0
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    config_entry: ConfigEntry,
+    config_entry: XMLTVConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ):
     """Set up the image platform."""
-    coordinator: XMLTVDataUpdateCoordinator = hass.data[DOMAIN][config_entry.entry_id]
+    coordinator = config_entry.runtime_data
     guide: TVGuide = coordinator.data
 
     LOGGER.debug(
@@ -33,7 +30,7 @@ async def async_setup_entry(
     )
 
     images: list[ImageEntity] = []
-    for channel in guide.channels:
+    for channel in coordinator.enabled_channels:
         # channel icon
         if coordinator.enable_channel_icon:
             images.append(XMLTVChannelIconImage(coordinator, channel))
@@ -84,7 +81,11 @@ class XMLTVChannelProgramImage(XMLTVProgramEntity, ImageEntity):
         )
 
         self.entity_id = entity_id
-        self._attr_unique_id = str(uuid.uuid5(uuid.NAMESPACE_X500, self.entity_id))
+        # unique_id is derived from the raw channel id (globally unique in XMLTV),
+        # not from the normalized entity_id which can collide across channels.
+        self._attr_unique_id = str(
+            uuid.uuid5(uuid.NAMESPACE_X500, f"{channel.id}_program_image_{mode}")
+        )
 
         self._attr_has_entity_name = True
         self.entity_description = ImageEntityDescription(
@@ -136,7 +137,11 @@ class XMLTVChannelIconImage(XMLTVEntity, ImageEntity):
         )
 
         self.entity_id = entity_id
-        self._attr_unique_id = str(uuid.uuid5(uuid.NAMESPACE_X500, self.entity_id))
+        # unique_id is derived from the raw channel id (globally unique in XMLTV),
+        # not from the normalized entity_id which can collide across channels.
+        self._attr_unique_id = str(
+            uuid.uuid5(uuid.NAMESPACE_X500, f"{channel.id}_channel_icon")
+        )
 
         self._attr_has_entity_name = True
         self.entity_description = ImageEntityDescription(

@@ -116,17 +116,19 @@ class TVProgram(BaseXmlModel, tag="programme", search_mode="ordered"):
 
         if len(value) == 8:  # YYYYMMDD
             return datetime.strptime(value, "%Y%m%d").date()
-        elif len(value) == 6:  # YYYYMM
+        if len(value) == 6:  # YYYYMM
             return datetime.strptime(value, "%Y%m").date()
-        elif len(value) == 4:  # YYYY
+        if len(value) == 4:  # YYYY
             return datetime.strptime(value, "%Y").date()
-        else:
-            raise ValueError(f"Invalid date format: {value}")
+        raise ValueError(f"Invalid date format: {value}")
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: Any) -> None:  # noqa: PYI063
         """Hooks post-initialization to validate start < end time."""
         if self.start >= self.end:
             raise ValueError("Program start time must be before end time")
+
+        # Set later by TVGuide cross-linking; None until then.
+        self.__channel: TVChannel | None = None
 
         return super().model_post_init(__context)
 
@@ -203,15 +205,11 @@ class TVProgram(BaseXmlModel, tag="programme", search_mode="ordered"):
         return title
 
     @property
-    def channel(self) -> "TVChannel | None":
-        """The channel object this program is broadcast on."""
-        if not hasattr(self, "_TVProgram__channel"):
-            # _link_channel was not called, fail silently
-            return None
-
+    def channel(self) -> TVChannel | None:
+        """The channel object this program is broadcast on, or None if not linked."""
         return self.__channel
 
-    def _link_channel(self, channel: "TVChannel"):
+    def _link_channel(self, channel: TVChannel):
         """
         Set the channel object for this program.
 

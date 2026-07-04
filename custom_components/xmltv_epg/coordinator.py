@@ -10,7 +10,9 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
+from homeassistant.util import dt as dt_util
 
+from custom_components.xmltv_epg.model.channel import TVChannel
 from custom_components.xmltv_epg.model.guide import TVGuide
 
 from .api import (
@@ -24,7 +26,7 @@ from .const import DOMAIN, LOGGER, SENSOR_REFRESH_INTERVAL
 class XMLTVDataUpdateCoordinator(DataUpdateCoordinator[TVGuide]):
     """Class to manage fetching data from XMLTV."""
 
-    config_entry: ConfigEntry
+    config_entry: XMLTVConfigEntry
 
     __client: XMLTVClient
     __lookahead: timedelta
@@ -34,6 +36,7 @@ class XMLTVDataUpdateCoordinator(DataUpdateCoordinator[TVGuide]):
     __enable_channel_icon: bool
     __enable_program_image: bool
     __primetime_time: time
+    __selected_channels: list[str] | None
 
     __guide: TVGuide
     __last_refetch_time: datetime | None
@@ -42,7 +45,7 @@ class XMLTVDataUpdateCoordinator(DataUpdateCoordinator[TVGuide]):
     def __init__(
         self,
         hass: HomeAssistant,
-        config_entry: ConfigEntry,
+        config_entry: XMLTVConfigEntry,
         client: XMLTVClient,
         update_interval: int,
         lookahead: int,
@@ -52,6 +55,7 @@ class XMLTVDataUpdateCoordinator(DataUpdateCoordinator[TVGuide]):
         enable_channel_icon: bool,
         enable_program_image: bool,
         primetime_time: str,  # HH:MM:SS format
+        selected_channels: list[str] | None = None,
     ) -> None:
         """Initialize."""
         self.__client = client
@@ -61,6 +65,7 @@ class XMLTVDataUpdateCoordinator(DataUpdateCoordinator[TVGuide]):
         self.__enable_primetime_sensor = enable_primetime_sensor
         self.__enable_channel_icon = enable_channel_icon
         self.__enable_program_image = enable_program_image
+        self.__selected_channels = selected_channels
 
         try:
             try:
@@ -125,7 +130,7 @@ class XMLTVDataUpdateCoordinator(DataUpdateCoordinator[TVGuide]):
     @property
     def actual_now(self) -> datetime:
         """Get actual current time."""
-        return datetime.now()
+        return dt_util.now()
 
     @property
     def current_time(self) -> datetime:
@@ -174,6 +179,25 @@ class XMLTVDataUpdateCoordinator(DataUpdateCoordinator[TVGuide]):
         return self.__enable_program_image
 
     @property
+    def enabled_channels(self) -> list[TVChannel]:
+        """
+        Get the channels to expose as entities.
+
+        Returns all channels when no explicit selection is stored, keeping the
+        behaviour backwards compatible. Filtering by id also transparently drops
+        any selected channel that later disappears from the guide.
+        """
+        channels = self.data.channels
+        if not self.__selected_channels:
+            return channels
+
+        allowed = set(self.__selected_channels)
+        return [channel for channel in channels if channel.id in allowed]
+
+    @property
     def _last_refetch_time(self) -> datetime | None:
         """Get last refetch time."""
         return self.__last_refetch_time
+
+
+type XMLTVConfigEntry = ConfigEntry[XMLTVDataUpdateCoordinator]

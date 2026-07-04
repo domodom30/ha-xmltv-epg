@@ -1,0 +1,213 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "description": "Configurez la source de données de l'intégration XMLTV EPG.",
+        "data": {
+          "host": "URL de la source XMLTV"
+        },
+        "data_description": {
+          "host": "Lien direct vers le fichier de guide XMLTV. Les fichiers compressés (.gz, .xz, .zip) sont pris en charge."
+        }
+      }
+    },
+    "error": {
+      "connection": "Impossible de récupérer les données XMLTV.",
+      "unknown": "Une erreur inconnue est survenue."
+    },
+    "abort": {
+      "already_configured": "Cette source XMLTV est déjà configurée."
+    },
+    "progress": {
+      "import_guide": "Téléchargement et analyse du guide XMLTV… Cela peut prendre un moment pour les guides volumineux."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "description": "Modifiez les paramètres d'exécution de l'intégration XMLTV EPG. Les changements peuvent nécessiter le rechargement de l'intégration.",
+        "sections": {
+          "channels": {
+            "name": "Chaînes",
+            "data": {
+              "selected_channels": "Chaînes"
+            },
+            "data_description": {
+              "selected_channels": "Seules les chaînes sélectionnées obtiennent des entités capteur et image. Laissez tout sélectionné pour exposer toutes les chaînes."
+            }
+          },
+          "update": {
+            "name": "Mise à jour",
+            "data": {
+              "update_interval_hours": "Intervalle de mise à jour (heures)"
+            },
+            "data_description": {
+              "update_interval_hours": "Fréquence de re-téléchargement des données du guide depuis la source."
+            }
+          },
+          "programs": {
+            "name": "Programmes",
+            "data": {
+              "enable_current_sensor": "Activer le capteur du programme en cours",
+              "enable_upcoming_sensor": "Activer le capteur du programme suivant",
+              "enable_primetime_sensor": "Activer le capteur du programme de première partie de soirée",
+              "program_lookahead_minutes": "Anticipation du programme en cours (minutes)",
+              "primetime_time": "Heure du programme de première partie de soirée"
+            },
+            "data_description": {
+              "program_lookahead_minutes": "Considérer un programme comme « en cours » ce nombre de minutes avant son début réel.",
+              "primetime_time": "Heure de la journée utilisée pour le capteur de programme de première partie de soirée."
+            }
+          },
+          "images": {
+            "name": "Images",
+            "data": {
+              "enable_channel_icons": "Activer les entités Image des logos des chaînes",
+              "enable_program_images": "Activer les entités Image du programme en cours"
+            }
+          }
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "program_current": {
+        "name": "Programme en cours",
+        "state_attributes": {
+          "start": {
+            "name": "Débute à"
+          },
+          "end": {
+            "name": "Se termine à"
+          },
+          "duration": {
+            "name": "Durée"
+          },
+          "title": {
+            "name": "Titre"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "release_date": {
+            "name": "Date de sortie"
+          },
+          "language": {
+            "name": "Langue"
+          },
+          "episode": {
+            "name": "Épisode"
+          },
+          "category": {
+            "name": "Catégorie"
+          },
+          "subtitle": {
+            "name": "Sous-titre"
+          },
+          "channel_program_known_until": {
+            "name": "EPG disponible jusqu'au"
+          }
+        }
+      },
+      "program_upcoming": {
+        "name": "Programme suivant",
+        "state_attributes": {
+          "start": {
+            "name": "Débute à"
+          },
+          "end": {
+            "name": "Se termine à"
+          },
+          "duration": {
+            "name": "Durée"
+          },
+          "title": {
+            "name": "Titre"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "release_date": {
+            "name": "Date de sortie"
+          },
+          "language": {
+            "name": "Langue"
+          },
+          "episode": {
+            "name": "Épisode"
+          },
+          "category": {
+            "name": "Catégorie"
+          },
+          "subtitle": {
+            "name": "Sous-titre"
+          }
+        }
+      },
+      "program_primetime": {
+        "name": "Programme de première partie de soirée",
+        "state_attributes": {
+          "start": {
+            "name": "Débute à"
+          },
+          "end": {
+            "name": "Se termine à"
+          },
+          "duration": {
+            "name": "Durée"
+          },
+          "title": {
+            "name": "Titre"
+          },
+          "description": {
+            "name": "Description"
+          },
+          "release_date": {
+            "name": "Date de sortie"
+          },
+          "language": {
+            "name": "Langue"
+          },
+          "episode": {
+            "name": "Épisode"
+          },
+          "category": {
+            "name": "Catégorie"
+          },
+          "subtitle": {
+            "name": "Sous-titre"
+          },
+          "channel_program_known_until": {
+            "name": "EPG disponible jusqu'au"
+          }
+        }
+      },
+      "last_update": {
+        "name": "Dernière mise à jour de {generator_name}",
+        "state_attributes": {
+          "generator_name": {
+            "name": "Nom du générateur"
+          },
+          "generator_url": {
+            "name": "URL du générateur"
+          }
+        }
+      }
+    },
+    "image": {
+      "program_image_current": {
+        "name": "Image du programme en cours"
+      },
+      "program_image_upcoming": {
+        "name": "Image du programme suivant"
+      },
+      "program_image_primetime": {
+        "name": "Image du programme de première partie de soirée"
+      },
+      "channel_icon": {
+        "name": "Logo de la chaîne"
+      }
+    }
+  }
+}

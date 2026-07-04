@@ -15,6 +15,10 @@ from pydantic import ValidationError
 
 from .model import TVGuide
 
+# Timeout for establishing the connection and receiving the response headers.
+# The response body itself is read without a timeout, as EPG files may be large.
+REQUEST_TIMEOUT = 30  # seconds
+
 
 class XMLTVClientError(Exception):
     """Exception to indicate a general API error."""
@@ -41,13 +45,27 @@ class XMLTVClient:
     async def async_get_data(self) -> TVGuide:
         """Fetch XMLTV Guide data."""
         try:
-            # fetch data
-            response = await self._session.get(url=self._url)
+            async with asyncio.timeout(REQUEST_TIMEOUT):
+                response = await self._session.get(url=self._url)
             response.raise_for_status()
 
-            xml_bytes = await self.__decode_response(response)
+            content_type = response.content_type
+            content_encoding = response.headers.get("Content-Encoding", None)
+            url = str(response.url)
+            raw = await response.read()
 
-            guide = TVGuide.from_xml(xml_bytes)
+            if self.__logger:
+                self.__logger.debug(
+                    "Decoding response from %s: content-type=%s, content-encoding=%s",
+                    url,
+                    content_type,
+                    content_encoding,
+                )
+
+            loop = asyncio.get_running_loop()
+            guide = await loop.run_in_executor(
+                None, self._decode_and_parse, raw, content_type, url
+            )
             if guide is None:
                 raise XMLTVClientError(
                     "Failed to parse TV Guide data",
@@ -68,57 +86,56 @@ class XMLTVClient:
             raise XMLTVClientError(
                 "Error parsing xmltv data: " + exception.__str__()
             ) from exception
-        except Exception as exception:  # pylint: disable=broad-except
+        except Exception as exception:
             raise XMLTVClientError(
                 "Unknown error fetching xmltv data: " + exception.__str__()
             ) from exception
 
-    async def __decode_response(self, response: aiohttp.ClientResponse) -> bytes:
-        """Attempt to decode the response content to XML text."""
-        content_type = response.content_type
-        content_encoding = response.headers.get("Content-Encoding", None)
+    def _decode_and_parse(self, raw: bytes, content_type: str, url: str) -> TVGuide:
+        """
+        Decode the raw response bytes and parse them into a TVGuide.
 
-        if self.__logger:
-            self.__logger.debug(
-                "Decoding response from %s: content-type=%s, content-encoding=%s",
-                response.url,
-                content_type,
-                content_encoding,
-            )
+        Runs in an executor thread: it must stay purely synchronous (no async /
+        event-loop access) as it performs the CPU-heavy decompression and parsing.
+        """
+        xml_bytes = self._decode_bytes(raw, content_type, url)
+        return TVGuide.from_xml_streaming(xml_bytes)
 
-        # figure out how to decode the XML data
+    def _decode_bytes(self, raw: bytes, content_type: str, url: str) -> bytes:
+        """Decode the raw (already read) response bytes into XML bytes."""
         decode_fn = None
         if content_type in ["text/xml", "application/xml"]:
-            # raw XML text
-            async def decode_plain() -> bytes:
-                return await response.read()
+
+            def decode_plain() -> bytes:
+                return raw
 
             decode_fn = decode_plain
 
-        elif content_type in [
-            "application/gzip",
-            "application/x-gzip",
-        ] or "xml.gz" in str(response.url):
+        elif (
+            content_type
+            in [
+                "application/gzip",
+                "application/x-gzip",
+            ]
+            or "xml.gz" in url
+        ):
             # xml.gz, XML compressed with gzip
-            async def decode_gzip() -> bytes:
-                d = await response.read()
-                return gzip.decompress(d)
+            def decode_gzip() -> bytes:
+                return gzip.decompress(raw)
 
             decode_fn = decode_gzip
 
-        elif content_type in ["application/x-xz"] or "xml.xz" in str(response.url):
-            # xm.xz, XML compressed with xz
-            async def decode_xz() -> bytes:
-                d = await response.read()
-                return lzma.decompress(d)
+        elif content_type in ["application/x-xz"] or "xml.xz" in url:
+
+            def decode_xz() -> bytes:
+                return lzma.decompress(raw)
 
             decode_fn = decode_xz
 
-        elif content_type in ["application/zip"] or "xml.zip" in str(response.url):
-            # xml.zip, XML file inside a zip archive
-            async def decode_zip() -> bytes:
-                d = await response.read()
-                with io.BytesIO(d) as iofile, zipfile.ZipFile(iofile, "r") as zip:
+        elif content_type in ["application/zip"] or "xml.zip" in url:
+
+            def decode_zip() -> bytes:
+                with io.BytesIO(raw) as iofile, zipfile.ZipFile(iofile, "r") as zip:
                     namelist = zip.namelist()
                     i = 0
 
@@ -143,20 +160,16 @@ class XMLTVClient:
             decode_fn = decode_zip
         else:
             raise XMLTVClientError(
-                f"Don't know how to handle content type '{response.content_type}' (from {response.url})",
+                f"Don't know how to handle content type '{content_type}' (from {url})",
             )
 
         try:
-            return await decode_fn()
+            return decode_fn()
         except Exception as decode_exception:
-            # workaround for elres.de [gzipped xml, gzip transfer (wrong content-type)]
             if self.__logger:
                 self.__logger.debug(
-                    "Failed to decode xml data using expected method, attempting to decode as text. Error: %s",
+                    "Failed to decode xml data using expected method, using raw bytes as text. Error: %s",
                     decode_exception,
                 )
 
-            try:
-                return await response.read()
-            except Exception as text_exception:
-                raise text_exception from decode_exception
+            return raw

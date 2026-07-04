@@ -32,6 +32,10 @@ DEFAULT_ENABLE_CHANNEL_ICONS = False
 OPT_ENABLE_PROGRAM_IMAGES = "enable_program_images"
 DEFAULT_ENABLE_PROGRAM_IMAGES = False
 
+# List of channel ids to expose as entities.
+# An absent or empty list means "all channels" (backwards compatible default).
+OPT_SELECTED_CHANNELS = "selected_channels"
+
 # Interval that sensors are updated.
 # This is only updating sensors from cached data, fetching new data interval is defined by OPT_UPDATE_INTERVAL.
 SENSOR_REFRESH_INTERVAL = 60  # seconds

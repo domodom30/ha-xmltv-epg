@@ -41,7 +41,7 @@ class TVProgramEpisodeNumber(BaseXmlModel, tag="episode-num", search_mode="order
 
     def __parse_value(self) -> tuple[int | None, int | None]:
         """Parse the raw_value based on the system. Used once after model initialization."""
-        if self.system == "SxxExx" or self.system == "onscreen":
+        if self.system in {"SxxExx", "onscreen"}:
             val = self.raw_value.upper()
 
             # valid formats: S#E#, S#, E#
@@ -71,7 +71,7 @@ class TVProgramEpisodeNumber(BaseXmlModel, tag="episode-num", search_mode="order
         # cannot parse
         return (None, None)
 
-    def model_post_init(self, __context: Any) -> None:
+    def model_post_init(self, __context: Any) -> None:  # noqa: PYI063
         """Hooks post-initialization to parse the raw value."""
         self.__value = self.__parse_value()
         return super().model_post_init(__context)

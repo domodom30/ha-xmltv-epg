@@ -1,16 +1,13 @@
 {
   "domain": "xmltv_epg",
   "name": "XMLTV EPG",
-  "codeowners": [
-    "@shadow578"
-  ],
+  "codeowners": ["@domodom30"],
   "config_flow": true,
-  "documentation": "https://github.com/shadow578/homeassistant_xmltv_epg",
+  "documentation": "https://github.com/domodom30/ha-xmltv-epg",
+  "integration_type": "service",
   "iot_class": "cloud_polling",
-  "issue_tracker": "https://github.com/shadow578/homeassistant_xmltv_epg/issues",
-  "requirements": [
-    "pydantic>=2.12.2",
-    "pydantic-xml>=2.19.0"
-  ],
-  "version": "1.0.0"
+  "issue_tracker": "https://github.com/domodom30/ha-xmltv-epg/issues",
+  "loggers": ["custom_components.xmltv_epg"],
+  "requirements": ["lxml>=4.9.0", "pydantic>=2.12.2", "pydantic-xml>=2.19.0"],
+  "version": "2.1.0"
 }

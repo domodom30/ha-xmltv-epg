@@ -7,7 +7,6 @@ https://github.com/shadow578/homeassistant_xmltv-epg
 
 from __future__ import annotations
 
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
@@ -22,7 +21,6 @@ from .const import (
     DEFAULT_PRIMETIME_TIME,
     DEFAULT_PROGRAM_LOOKAHEAD,
     DEFAULT_UPDATE_INTERVAL,
-    DOMAIN,
     LOGGER,
     OPT_ENABLE_CHANNEL_ICONS,
     OPT_ENABLE_CURRENT_SENSOR,
@@ -31,9 +29,10 @@ from .const import (
     OPT_ENABLE_UPCOMING_SENSOR,
     OPT_PRIMETIME_TIME,
     OPT_PROGRAM_LOOKAHEAD,
+    OPT_SELECTED_CHANNELS,
     OPT_UPDATE_INTERVAL,
 )
-from .coordinator import XMLTVDataUpdateCoordinator
+from .coordinator import XMLTVConfigEntry, XMLTVDataUpdateCoordinator
 
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
@@ -42,10 +41,9 @@ PLATFORMS: list[Platform] = [
 
 
 # https://developers.home-assistant.io/docs/config_entries_index/#setting-up-an-entry
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_setup_entry(hass: HomeAssistant, entry: XMLTVConfigEntry) -> bool:
     """Set up this integration using UI."""
-    hass.data.setdefault(DOMAIN, {})
-    hass.data[DOMAIN][entry.entry_id] = coordinator = XMLTVDataUpdateCoordinator(
+    entry.runtime_data = coordinator = XMLTVDataUpdateCoordinator(
         hass=hass,
         config_entry=entry,
         client=XMLTVClient(
@@ -71,6 +69,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             OPT_ENABLE_PROGRAM_IMAGES, DEFAULT_ENABLE_PROGRAM_IMAGES
         ),
         primetime_time=entry.options.get(OPT_PRIMETIME_TIME, DEFAULT_PRIMETIME_TIME),
+        selected_channels=entry.options.get(OPT_SELECTED_CHANNELS),
     )
 
     # https://developers.home-assistant.io/docs/integration_fetching_data#coordinated-single-api-poll-for-data-for-all-entities
@@ -81,22 +80,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # listen for updates to the config entry to re-setup it
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
-    # FIXME for some reason, following the example for a coordinated single API poll, the
-    # sensors created in sensor.py don't display the data until the next refresh interval.
-    # causing a refresh manually after they are set up works around this issue.
-    # see https://developers.home-assistant.io/docs/integration_fetching_data/#coordinated-single-api-poll-for-data-for-all-entities
-    await coordinator.async_refresh()
-
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: XMLTVConfigEntry) -> bool:
     """Handle removal of an entry."""
-    if unloaded := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id)
-    return unloaded
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_reload_entry(hass: HomeAssistant, entry: XMLTVConfigEntry) -> None:
     """Reload config entry."""
     await hass.config_entries.async_reload(entry.entry_id)

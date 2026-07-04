@@ -8,10 +8,10 @@ from .image import TVImage
 from .program import TVProgram
 
 __all__ = [
-    "TVProgramCategory",
     "TVChannel",
-    "TVProgramEpisodeNumber",
     "TVGuide",
     "TVImage",
     "TVProgram",
+    "TVProgramCategory",
+    "TVProgramEpisodeNumber",
 ]

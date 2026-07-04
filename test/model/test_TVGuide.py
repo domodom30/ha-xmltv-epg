@@ -116,6 +116,80 @@ def test_from_xml_partially_invalid():
     assert len(guide.programs) == 1
 
 
+def test_from_xml_streaming() -> None:
+    """Test TVGuide.from_xml_streaming parses and cross-links like from_xml."""
+    xml = b"""
+<tv generator-info-name="xmltv_epg" generator-info-url="http://example.com">
+  <channel id="CH1"><display-name>Channel 1</display-name></channel>
+  <programme start="20200101020000 +0000" stop="20200101030000 +0000" channel="CH1">
+    <title>Program 2</title>
+  </programme>
+  <programme start="20200101010000 +0000" stop="20200101020000 +0000" channel="CH1">
+    <title>Program 1</title>
+  </programme>
+</tv>
+"""
+
+    guide = TVGuide.from_xml_streaming(xml)
+
+    assert guide is not None
+    assert guide.generator_name == "xmltv_epg"
+    assert guide.generator_url == "http://example.com"
+    assert len(guide.channels) == 1
+    assert len(guide.programs) == 2
+
+    # cross-linked and sorted by start time ?
+    assert guide.programs[0].channel is not None
+    assert guide.programs[0].channel.id == "CH1"
+    channel = guide.get_channel("CH1")
+    assert channel is not None
+    assert channel.last_program is not None
+    assert channel.last_program.title == "Program 2"
+
+
+def test_from_xml_streaming_partially_invalid() -> None:
+    """Test TVGuide.from_xml_streaming omits invalid channels/programs."""
+    xml = b"""
+<tv generator-info-name="xmltv_epg">
+    <channel id="CH1"><display-name>Channel 1</display-name></channel>
+    <programme start="20200101010000 +0000" stop="20200101020000 +0000" channel="CH1">
+        <title>Program 1</title>
+    </programme>
+    <channel id="CH2"></channel>
+    <programme start="20200101010000 +0000" stop="20200101020000 +0000" channel="CH2"></programme>
+    <channel><display-name>Channel 3</display-name></channel>
+    <programme start="20200101010000 +0000" stop="20200101020000 +0000"><title>Program 3</title></programme>
+</tv>
+"""
+
+    guide = TVGuide.from_xml_streaming(xml)
+
+    assert guide is not None
+    assert len(guide.channels) == 1
+    assert len(guide.programs) == 1
+
+
+def test_from_xml_streaming_program_invalid_start_after_end() -> None:
+    """Test TVGuide.from_xml_streaming omits programs with start after end."""
+    xml = b"""
+<tv generator-info-name="xmltv_epg">
+    <channel id="CH1"><display-name>Channel 1</display-name></channel>
+    <programme start="20200101010000 +0000" stop="20200101020000 +0000" channel="CH1">
+        <title>Program 1</title>
+    </programme>
+    <programme start="20200101030000 +0000" stop="20200101020000 +0000" channel="CH1">
+        <title>Program 2</title>
+    </programme>
+</tv>
+"""
+
+    guide = TVGuide.from_xml_streaming(xml)
+
+    assert guide is not None
+    assert len(guide.channels) == 1
+    assert len(guide.programs) == 1
+
+
 def test_from_xml_program_invalid_start_after_end():
     """
     Test TVGuide.from_xml method with a program entry where start time is after end time.
