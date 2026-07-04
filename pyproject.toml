@@ -7,7 +7,7 @@ dependencies = [
   "pytest==9.0.0",
   "colorlog>=6.10.1",
   "ruff>=0.15.20",
-  "anyio>=4.14.0",
+  "anyio>=4.14.1",
   "pyright>=1.1.410",
   "lxml>=6.1.1",
   "pydantic>=2.12.2",
